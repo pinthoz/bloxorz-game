@@ -272,7 +272,7 @@ display_win_message = False
         
 
 def menu(screen, menu_background):
-    menu_font = pygame.font.Font("assets/PKMN RBYGSC.ttf", 30)
+    menu_font = pygame.font.Font("images/PKMN RBYGSC.ttf", 30)
     menu_options = ["Start Game", "Rules", "Exit"] 
     menu_active = True
     selected_option = 0
@@ -310,6 +310,7 @@ def menu(screen, menu_background):
                     selected_option = (selected_option + 1) % len(menu_options)
                 elif event.key == K_RETURN:
                     if selected_option == 0:
+                        pygame.display.update()
                         return
                     elif selected_option == 1:  
                         show_rules()
@@ -336,25 +337,25 @@ pygame.display.set_caption('Space Block - Roll the Block')
 screen = pygame.display.set_mode((840, 600),0,32)
 display = pygame.Surface((400, 275), pygame.SRCALPHA, 32)
 display = display.convert_alpha()
-FONT = pygame.font.Font("assets/PKMN RBYGSC.ttf", 25)
+FONT = pygame.font.Font("images/PKMN RBYGSC.ttf", 25)
 
 
-menu_background = pygame.image.load('assets/background_menu.png').convert()
+menu_background = pygame.image.load('images/background_menu.png').convert()
 menu_background = pygame.transform.scale(menu_background, (840, 600))
 menu(screen, menu_background)
 
-box_component = [pygame.image.load('assets/component_0'+str(x) + '.png').convert() if x < 10 else pygame.image.load('assets/component_'+ str(x) + '.png').convert() for x in range(14) ]
+box_component = [pygame.image.load('images/component_0'+str(x) + '.png').convert() if x < 10 else pygame.image.load('images/component_'+ str(x) + '.png').convert() for x in range(14) ]
 
 for component in box_component:
     component.set_colorkey((0, 0, 0))
 
-background = pygame.image.load('assets/background.png').convert()
-tile_img = pygame.image.load('assets/obj_04.png').convert()
-bridge_img = pygame.image.load('assets/bridge_0.png').convert()
-roundBtn_img = pygame.image.load('assets/button_0.png').convert()
-xBtn_img = pygame.image.load('assets/button_2.png').convert()
-tile_restrict_img = pygame.image.load('assets/tilerestrict.png').convert()
-splitBtn_img = pygame.image.load('assets/button_4.png').convert()
+background = pygame.image.load('images/background.png').convert()
+tile_img = pygame.image.load('images/obj_04.png').convert()
+bridge_img = pygame.image.load('images/bridge_0.png').convert()
+roundBtn_img = pygame.image.load('images/button_0.png').convert()
+xBtn_img = pygame.image.load('images/button_2.png').convert()
+tile_restrict_img = pygame.image.load('images/tilerestrict.png').convert()
+splitBtn_img = pygame.image.load('images/button_4.png').convert()
 
 background.set_colorkey((0, 0, 0))
 background = pygame.transform.scale(background, (840, 600))
@@ -475,7 +476,7 @@ while level_number != len(levels.levels):
                     level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
 
                 if isWin:
-                    show_message(screen, "Congratulations!", screen.get_width() // 2, screen.get_height() // 2 - 50)
+                    show_message(screen, "Congratulations", screen.get_width() // 2, screen.get_height() // 2 - 50)
                     show_message(screen, "Level " + f'{level1:02d}' + " Completed", screen.get_width() // 2, screen.get_height() // 2)
                     show_message(screen, "Steps: " + f'{len(gameObj.moves)}', screen.get_width() // 2, screen.get_height() // 2 +50)
                     pygame.display.update()
