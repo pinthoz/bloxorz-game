@@ -265,11 +265,11 @@ def gameGenerate(levelN):
 #Algorithms
 
 def bfs(level, swatches, state: Board):
-    q = Queue()
-    q.put(state)
+    queue = Queue()
+    queue.put(state)
     visited = {}
-    while q.qsize() > 0:  
-        state = q.get()
+    while queue.qsize() > 0:  
+        state = queue.get()
         if state in visited:
             continue
         for move in ['U', 'D', 'L', 'R']:
@@ -280,16 +280,61 @@ def bfs(level, swatches, state: Board):
             if isProper:
                 moves_done = visited.get(new_state)  
                 if not (moves_done and moves_done < len(new_state.moves)):
-                    q.put(new_state)
-        
-        if not state.twotiles:
-            new_state = deepcopy(state)
-            isProper, isWin = new_state.make_move(map,swatches,'S')
-            lenMoves = visited.get(new_state)
-            if not (lenMoves and lenMoves < len(new_state.moves)):
-                q.put(new_state)
+                    queue.put(new_state)
         
         visited[state] = len(state.moves)
+        
+        
+def dfs(level, swatches, state: Board):
+    stack = []
+    stack.append(state)
+    visited = {}
+    while len(stack) > 0:
+        state = stack.pop()
+        if state in visited:
+            continue
+        for move in ['U', 'D', 'L', 'R']:
+            new_state = deepcopy(state)
+            isProper, isWin = new_state.make_move(level,swatches,move)
+            if isWin:
+                return new_state.moves
+            if isProper:
+                moves_done = visited.get(new_state)
+                if not (moves_done and moves_done < len(new_state.moves)):
+                    stack.append(new_state)
+        
+        visited[state] = len(state.moves)
+        
+        
+def dls(level, swatches, state: Board, depth_limit, visited):
+    if state in visited or depth_limit == 0:
+        return None
+
+    visited.add(state)
+    for move in ['U', 'D', 'L', 'R']:
+        new_state = deepcopy(state)
+        isProper, isWin = new_state.make_move(level, swatches, move)
+
+        if isWin:
+            return new_state.moves
+
+        if isProper:
+            result = dls(level, swatches, new_state, depth_limit - 1, visited)
+            if result is not None:
+                return result
+
+    visited.remove(state)
+    return None
+
+
+def idfs(level, swatches, state: Board):
+    depth_limit = 0
+    while True:
+        visited = set()
+        result = dls(level, swatches, state, depth_limit, visited)
+        if result is not None:
+            return result
+        depth_limit += 1
 
 ##########################################################################################################################################################################
 #MENU
@@ -367,8 +412,8 @@ pygame.display.set_caption('Space Block - Roll the Block')
 screen = pygame.display.set_mode((840, 600),0,32)
 display = pygame.Surface((400, 275), pygame.SRCALPHA, 32)
 display = display.convert_alpha()
-FONT = pygame.font.Font("images/PKMN RBYGSC.ttf", 25)  # adress of the font and size
-FONT_low = pygame.font.Font("images/PKMN RBYGSC.ttf", 15) # adress of the font and size
+FONT = pygame.font.Font("images/PKMN RBYGSC.ttf", 25)  # address of the font and size
+FONT_low = pygame.font.Font("images/PKMN RBYGSC.ttf", 15) # address of the font and size
 
 
 menu_background = pygame.image.load('images/background_menu.png').convert()
@@ -443,20 +488,45 @@ while level_number != len(levels.levels):
                     isProper, isWin = gameObj.make_move(level, swatches, 'U')
                 elif event.key == K_DOWN:
                     isProper, isWin = gameObj.make_move(level, swatches, 'D')
-                elif event.key == K_a:
+                elif event.key == K_b:
                     level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
                     runAlgor = True
                     m = len(gameObj.moves)
                     t = time.time()
                     solution = bfs(level, swatches,gameObj)
+                    print('----------------------------------------------')
+                    print('BFS')
+                    print('Level: ', level1)
                     print('Time: ', time.time() - t)
                     print('Moves: ', len(solution))
-                # for box in gameObj.block:
-                #     if box[0] > levels.MAX_X or box[0] < 0 or box[1] > levels.MAX_Y or box[1] < 0 or level[box[1]][box[0]] == ' ':
-                #         gameObj.block = [(levels.levels[level]['start']['x'],levels.levels[level]['start']['y'])]
+                    print('Moves done: ', solution)
+                elif event.key == K_d:
+                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+                    runAlgor = True
+                    m = len(gameObj.moves)
+                    t = time.time()
+                    solution = dfs(level, swatches,gameObj)
+                    print('----------------------------------------------')
+                    print('DFS')
+                    print('Level: ', level1)
+                    print('Time: ', time.time() - t)
+                    print('Moves: ', len(solution))
+                    print('Moves done: ', solution)
+                elif event.key == K_i:
+                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+                    runAlgor = True
+                    m = len(gameObj.moves)
+                    t = time.time()
+                    solution = idfs(level, swatches,gameObj)
+                    print('----------------------------------------------')
+                    print('IDFS')
+                    print('Level: ', level1)
+                    print('Time: ', time.time() - t)
+                    print('Moves: ', len(solution))
+                    print('Moves done: ', solution)
                 if not isProper:
                     level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
-
+    
     for y, row in reversed(enumlevel):
         for x, tile in reversed(row): 
             if tile == 'X':
@@ -517,10 +587,20 @@ while level_number != len(levels.levels):
     rect_moves.left = (screen.get_width() - 400)
     screen.blit(moves, rect_moves)
     
-    bfs_text = FONT_low.render('Press A to use BFS', True, (255, 255, 255))
+    bfs_text = FONT_low.render('Press B to use BFS', True, (255, 255, 255))
     bfs_rect = bfs_text.get_rect()
-    bfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 10)
+    bfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 50)
     screen.blit(bfs_text, bfs_rect)
+    
+    dfs_text = FONT_low.render('Press D to use DFS', True, (255, 255, 255))
+    dfs_rect = dfs_text.get_rect()
+    dfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 30)
+    screen.blit(dfs_text, dfs_rect)
+    
+    idfs_text = FONT_low.render('Press I to use IDFS', True, (255, 255, 255))
+    idfs_rect = idfs_text.get_rect()
+    idfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 10)
+    screen.blit(idfs_text, idfs_rect)
     
     text = FONT.render('Level ' + f'{level1:02d}', True, (0, 0, 0))
     rect = text.get_rect()
