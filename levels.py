@@ -154,5 +154,4 @@ levels = [
                                               'position': {'x': 1, 'y': 6}}],
                             'position': {'x': 3, 'y': 14},
                             'type': 's'}]}
-
         ]

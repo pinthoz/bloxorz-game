@@ -1,6 +1,7 @@
 import pygame, sys, time, random
 from pygame.locals import *
 import levels
+from queue import Queue
 from copy import deepcopy
 
 
@@ -17,6 +18,7 @@ class Board:
         self.block_direction()
         self.level_swatches = [] #list of swatches in the level
         self.moves = '' #string of moves
+        self.falling = False #if the block is falling
         self.num_swatches_switch = 0 #number of swatches in the level
         for i in range(MAX_Y+1):
             self.level_swatches.append([False]*(MAX_X+1)) #initialize list of swatches
@@ -64,7 +66,7 @@ class Board:
         if onSwatches:
             self.num_swatches_switch += 1
     
-                
+               
     def block_direction(self):
         if self.block[0] == self.block[2] and self.block[1] == self.block[3]: #block standing
             self.standing = True
@@ -79,8 +81,7 @@ class Board:
                     self.twotiles = True
                     self.vertical = True
                 elif block1[1] - block2[1] == -1:
-                    self.block[1] = self.block[3] # swap block1 and block2 
-                    self.block[3] = self.block[1] # swap block1 and block2
+                    self.block[1] , self.block[3]  = self.block[3],  self.block[1]# swap block1 and block2 
                     self.standing = False
                     self.twotiles = True
                     self.vertical = True
@@ -90,8 +91,8 @@ class Board:
                     self.twotiles = True
                     self.vertical = False
                 elif block1[0] - block2[0] == -1:
-                    self.block[0] = self.block[2]
-                    self.block[2] = self.block[0]
+                    self.block[0], self.block[2]  == self.block[2], self.block[0]
+
                     self.standing = False
                     self.twotiles = True
                     self.vertical = False
@@ -188,6 +189,7 @@ class Board:
                         self.block = [x1+1, y1, x2+1, y2]  #if it is laying vertical and we do right move, it will be laying vertical
                     else:
                         self.block = [x1+1, y1, x1+1, y1]
+        
 
         self.moves += move
         self.block_direction()
@@ -209,6 +211,7 @@ class Board:
                         self.swatchSwitch(swatches, self.block[2], self.block[3])
         
         if (self.standing) and (self.block == self.end): #if the block is standing on the end tile
+            self.falling = True
             return (True, True)
         
         return (True, False) 
@@ -219,13 +222,14 @@ class Board:
         return True
 
 
+    def getTuple(self):
+        return (self.block[0], self.block[1], self.block[2], self.block[3], self.block_choose, tuple(tuple(i) for i in self.level_swatches))
+
     def __eq__(self, other):
-        return (self.block[0], self.block[1], self.block[2], self.block[3], self.boxChoose, tuple(tuple(i) for i in self.level_swatches) == \
-            other.block[0], other.block[1], other.block[2], other.block[3], other.boxChoose, tuple(tuple(i) for i in other.level_swatches))
+        return self.getTuple() == other.getTuple()
 
     def __hash__(self):
-        return hash(self.block[0], self.block[1], self.block[2], self.block[3], self.block_choose, \
-            tuple(tuple(i) for i in self.level_swatches))  
+        return hash(self.getTuple()) 
     
 
 def swatchesDecode(swatches):
@@ -257,6 +261,35 @@ def gameGenerate(levelN):
     swatches, vitalSwatchesNum = swatchesDecode(level['swatches'])
     return levelN, gameObj, map, enumMap, swatches, vitalSwatchesNum
 
+##########################################################################################################################################################################
+#Algorithms
+
+def bfs(level, swatches, state: Board):
+    q = Queue()
+    q.put(state)
+    visited = {}
+    while q.qsize() > 0:  
+        state = q.get()
+        if state in visited:
+            continue
+        for move in ['U', 'D', 'L', 'R']:
+            new_state = deepcopy(state)
+            isProper, isWin = new_state.make_move(level, swatches, move)
+            if isWin:
+                return new_state.moves
+            if isProper:
+                moves_done = visited.get(new_state)  
+                if not (moves_done and moves_done < len(new_state.moves)):
+                    q.put(new_state)
+        
+        if not state.twotiles:
+            new_state = deepcopy(state)
+            isProper, isWin = new_state.make_move(map,swatches,'S')
+            lenMoves = visited.get(new_state)
+            if not (lenMoves and lenMoves < len(new_state.moves)):
+                q.put(new_state)
+        
+        visited[state] = len(state.moves)
 
 ##########################################################################################################################################################################
 #MENU
@@ -267,9 +300,6 @@ def show_message(screen,text,x,y, color=(0,0,0)):
     text_rect.center = (x, y)
     screen.blit(rendered_text, text_rect)
 
-
-display_win_message = False
-        
 
 def menu(screen, menu_background):
     menu_font = pygame.font.Font("images/PKMN RBYGSC.ttf", 30)
@@ -337,7 +367,8 @@ pygame.display.set_caption('Space Block - Roll the Block')
 screen = pygame.display.set_mode((840, 600),0,32)
 display = pygame.Surface((400, 275), pygame.SRCALPHA, 32)
 display = display.convert_alpha()
-FONT = pygame.font.Font("images/PKMN RBYGSC.ttf", 25)
+FONT = pygame.font.Font("images/PKMN RBYGSC.ttf", 25)  # adress of the font and size
+FONT_low = pygame.font.Font("images/PKMN RBYGSC.ttf", 15) # adress of the font and size
 
 
 menu_background = pygame.image.load('images/background_menu.png').convert()
@@ -366,13 +397,6 @@ xBtn_img.set_colorkey((0, 0, 0))
 tile_restrict_img.set_colorkey((0, 0, 0))
 splitBtn_img.set_colorkey((0, 0, 0))
 
-#gameObj.block = [(0,2),(0,0)]
-# gameObj.block = [(0,2),(0,1)]
-# gameObj.block = [(0,1),(0,2)]
-# gameObj.block = [(0,1),(1,1)]
-# gameObj.block = [(1,1),(0,1)]
-# gameObj.block = [(1,1),(2,1)]
-# gameObj.block = [(0,0)]
 
 level1 = 1
 level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
@@ -393,14 +417,46 @@ while level_number != len(levels.levels):
     isWin = False
     #For change direction in level: for x, row in enumerate(level):
     if runAlgor:
-        if i < len(solution):
-            isProper, isWin = gameObj.make_move(level, swatches, solution[i])
-            i += 1
-            time.sleep(0.3)
+        if m < len(solution):
+            isProper, isWin = gameObj.make_move(level, swatches, solution[m])
+            m += 1
+            time.sleep(0.2)
         else:
-            level1 += 1
             level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
             runAlgor = False
+
+    if not runAlgor:
+        for event in pygame.event.get():
+            # event = pygame.event.get().pop()
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == K_RIGHT:
+                    isProper, isWin = gameObj.make_move(level, swatches, 'R')
+                elif event.key == K_LEFT:
+                    isProper, isWin = gameObj.make_move(level, swatches, 'L')
+                elif event.key == K_UP: 
+                    isProper, isWin = gameObj.make_move(level, swatches, 'U')
+                elif event.key == K_DOWN:
+                    isProper, isWin = gameObj.make_move(level, swatches, 'D')
+                elif event.key == K_a:
+                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+                    runAlgor = True
+                    m = len(gameObj.moves)
+                    t = time.time()
+                    solution = bfs(level, swatches,gameObj)
+                    print('Time: ', time.time() - t)
+                    print('Moves: ', len(solution))
+                # for box in gameObj.block:
+                #     if box[0] > levels.MAX_X or box[0] < 0 or box[1] > levels.MAX_Y or box[1] < 0 or level[box[1]][box[0]] == ' ':
+                #         gameObj.block = [(levels.levels[level]['start']['x'],levels.levels[level]['start']['y'])]
+                if not isProper:
+                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+
     for y, row in reversed(enumlevel):
         for x, tile in reversed(row): 
             if tile == 'X':
@@ -428,6 +484,7 @@ while level_number != len(levels.levels):
                     display.blit(box_component[6], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 24))
                     display.blit(box_component[6], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 32))
                     display.blit(box_component[5], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 40))
+                            
                 elif gameObj.twotiles:
                     if gameObj.vertical:
                         if gameObj.block[0] == x and gameObj.block[1] == y:
@@ -445,53 +502,43 @@ while level_number != len(levels.levels):
                             display.blit(box_component[9], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 8))
                             display.blit(box_component[8], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 16))
                             
-                elif gameObj.block[gameObj.boxChoose*2] == x and gameObj.block[gameObj.boxChoose*2+1] == y:
+                elif gameObj.block[gameObj.block_choose*2] == x and gameObj.block[gameObj.block_choose*2+1] == y:
                     display.blit(box_component[7], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 8))
                     display.blit(box_component[5], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 16))
                 else:
                     display.blit(box_component[13], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 8))
                     display.blit(box_component[12], (144 - x * 16 + y * 16, 220 - x * 8 - y * 8 - 16))
-    if not runAlgor and not runVisual:
-        for event in pygame.event.get():
-            # event = pygame.event.get().pop()
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-                elif event.key == K_RIGHT:
-                    isProper, isWin = gameObj.make_move(level, swatches, 'R')
-                elif event.key == K_LEFT:
-                    isProper, isWin = gameObj.make_move(level, swatches, 'L')
-                elif event.key == K_UP: 
-                    isProper, isWin = gameObj.make_move(level, swatches, 'U')
-                elif event.key == K_DOWN:
-                    isProper, isWin = gameObj.make_move(level, swatches, 'D')
-                # for box in gameObj.block:
-                #     if box[0] > levels.MAX_X or box[0] < 0 or box[1] > levels.MAX_Y or box[1] < 0 or level[box[1]][box[0]] == ' ':
-                #         gameObj.block = [(levels.levels[level]['start']['x'],levels.levels[level]['start']['y'])]
-                if not isProper:
-                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
 
-                if isWin:
-                    show_message(screen, "Congratulations", screen.get_width() // 2, screen.get_height() // 2 - 50)
-                    show_message(screen, "Level " + f'{level1:02d}' + " Completed", screen.get_width() // 2, screen.get_height() // 2)
-                    show_message(screen, "Steps: " + f'{len(gameObj.moves)}', screen.get_width() // 2, screen.get_height() // 2 +50)
-                    pygame.display.update()
-                    time.sleep(3)                        
-                    level1 += 1
-                    level_number += 1
-                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
-
-    
     screen.blit(background, (0,0))
     screen.blit(pygame.transform.scale(display, (400*1.8, 275*1.8)), (60, 120))
-
-    # screen.blit(display, (0, 100))
+    
+    moves = FONT.render('Moves: ' + f'{len(gameObj.moves)}', True, (0, 0, 0))
+    rect_moves = moves.get_rect()
+    rect_moves.left = (screen.get_width() - 400)
+    screen.blit(moves, rect_moves)
+    
+    bfs_text = FONT_low.render('Press A to use BFS', True, (255, 255, 255))
+    bfs_rect = bfs_text.get_rect()
+    bfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 10)
+    screen.blit(bfs_text, bfs_rect)
+    
     text = FONT.render('Level ' + f'{level1:02d}', True, (0, 0, 0))
     rect = text.get_rect()
     rect.right = (screen.get_width() - 10)
     screen.blit(text, rect)
+
     pygame.display.update()
+    
+    if isWin:
+        show_message(screen, "Congratulations", screen.get_width() // 2, screen.get_height() // 2 - 50)
+        show_message(screen, "Level " + f'{level1:02d}' + " Completed", screen.get_width() // 2, screen.get_height() // 2)
+        show_message(screen, "Steps: " + f'{len(gameObj.moves)}', screen.get_width() // 2, screen.get_height() // 2 +50)
+        pygame.display.update()
+        time.sleep(3)                        
+        level1 += 1
+        level_number += 1
+        level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+
+    
+
+
