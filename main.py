@@ -3,13 +3,17 @@ from pygame.locals import *
 import levels
 from queue import Queue
 from copy import deepcopy
+import heapq
+import math
+from queue import PriorityQueue
 
 
 MAX_X = 9
 MAX_Y = 14
 
+
 class Board:
-    def __init__(self, level):
+    def __init__(self, level, cost=0):
         self.start = [level['start']['x'], level['start']['y'],\
             level['start']['x'], level['start']['y']]  #start position
         self.block = [level['start']['x'], level['start']['y'],\
@@ -18,7 +22,6 @@ class Board:
         self.block_direction()
         self.level_swatches = [] #list of swatches in the level
         self.moves = '' #string of moves
-        self.falling = False #if the block is falling
         self.num_swatches_switch = 0 #number of swatches in the level
         for i in range(MAX_Y+1):
             self.level_swatches.append([False]*(MAX_X+1)) #initialize list of swatches
@@ -230,8 +233,24 @@ class Board:
 
     def __hash__(self):
         return hash(self.getTuple()) 
-    
+ 
+ 
+class HeuristicBoard:
+    def __init__(self, board: Board, heuristic: int):
+        self.board = board
+        self.heuristic = heuristic
 
+    def __lt__(self, other):
+        if isinstance(other, HeuristicBoard):
+            return self.heuristic < other.heuristic
+        return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, HeuristicBoard):
+            return self.board == other.board and self.heuristic == other.heuristic
+        return NotImplemented
+
+   
 def swatchesDecode(swatches):
     vitalSwatchesNum = 0
     swatchesDict = dict()
@@ -285,56 +304,120 @@ def bfs(level, swatches, state: Board):
         visited[state] = len(state.moves)
         
         
-def dfs(level, swatches, state: Board):
-    stack = []
-    stack.append(state)
-    visited = {}
-    while len(stack) > 0:
-        state = stack.pop()
+        
+def h1manhattan(state:Board):  # OS ARGUMENTOS DA FUNÇÃO ESTÃO bem??
+    #heuristic function based on the sum of Manhattan distance from current position to goal position
+    x1_currentposition = state.block[0]
+    y1_currentposition =state.block[1]
+    x2_currentposition = state.block[2]
+    y2_currentposition =state.block[3]
+    x1_goalposition = state.end[0]
+    y1_goalposition= state.end[1]
+    x2_goalposition =state.end[2]
+    y2_goalposition= state.end[3]
+
+    distanceM1 = 0 
+    distanceM2 = 0 
+    distanceM = 0
+    distanceM1 = abs(x1_currentposition - x1_goalposition) + abs(y1_currentposition - y1_goalposition)
+    distanceM2 = abs(x2_currentposition - x2_goalposition) + abs(y2_currentposition - y2_goalposition)
+    distanceM = max(distanceM1, distanceM2)  # not sure if we add the two distances or evaluate the maeximum of the two ??
+    if state.standing:
+        distanceM += 1
+    return distanceM    
+
+
+
+
+def h2euclidean(state:Board):  # SEI QUE OS ARGUMENTOS DA FUNÇÃO ESTÃO MAL
+    # heuristic function based on euclidean distances from current position to goal position
+    x1_currentposition = state.block[0]
+    y1_currentposition =state.block[1]
+    x2_currentposition = state.block[2]
+    y2_currentposition =state.block[3]
+    x1_goalposition = state.end[0]
+    y1_goalposition= state.end[1]
+    x2_goalposition = state.end[2]
+    y2_goalposition= state.end[3]
+
+    distanceE1 = 0
+    distanceE2= 0
+    distanceE = 0.0
+
+
+    distanceE1 += math.sqrt((x1_currentposition-x1_goalposition)**2 + (y1_currentposition-y1_goalposition)**2)
+    distanceE2 += math.sqrt((x2_currentposition-x2_goalposition)**2 + (y2_currentposition-y2_goalposition)**2)
+    distanceE = max(distanceE1,distanceE2)  # not sure if we add the two distances or evaluate the maeximum of the two ??
+    if state.standing:
+        distanceE += 1
+    return distanceE
+
+def h3Chebyshev(state: Board):  # no artigo está esta heuristica como sendo a melhor; resolvi incli-la para compararmos
+    # heuristic function based on Chebyshev distance - according to article Tahani Q. Alhassan et al. / Procedia Computer Science 163 (2019) 391–399
+    # h(n)=max(|x-xg|,|y - yg|) where x is the row number of current positions of block, \
+    # xg is the row number of goal position, y and yg are the same but in terms of columns 
+    #the block has 2 bricks and represented by two x,y coordinates, the heuristic value for the both \
+    # bricks h(n)1 and h(n)2 are calculated, then the maximum one is considered as the overall heuristic.
+   
+    x1_currentposition = state.block[0]
+    y1_currentposition =state.block[1]
+    x2_currentposition = state.block[2]
+    y2_currentposition =state.block[3]
+    x1_goalposition = state.end[0]
+    y1_goalposition= state.end[1]
+    x2_goalposition = state.end[2]
+    y2_goalposition= state.end[3]
+
+    distanceC1 = 0
+    distanceC2= 0
+    distanceC = 0
+
+    distanceC1 += max(abs(x1_currentposition-x1_goalposition), abs(y1_currentposition-y1_goalposition))
+    distanceC2 += max(abs(x2_currentposition-x2_goalposition), abs(y2_currentposition-y2_goalposition))
+    distanceC= max(distanceC1,distanceC2)
+    if state.standing == True:
+        distanceC += 1  
+    return distanceC
+
+
+
+def calculate_pathcost():  # maybe this is not necessary: since every move has cost \
+    # 1, we just need to add 1 to each value of the heuristic to get the total cost for A*
+    pathcost = []
+    pathcost_move = 0
+    for move in ['U', 'D', 'L', 'R']:
+      pathcost_move += 1  # not sure if we add a list for every move
+      pathcost.append(pathcost_move)
+    return pathcost  
+
+
+def greedy_M(level, swatches, state: Board):
+    q = PriorityQueue()
+    q.put(HeuristicBoard(state, h1manhattan(state)))
+    visited = set()
+
+    while not q.empty():
+        heuristic_board = q.get()
+        state = heuristic_board.board
+
         if state in visited:
             continue
+
+        visited.add(state)
+
         for move in ['U', 'D', 'L', 'R']:
             new_state = deepcopy(state)
-            isProper, isWin = new_state.make_move(level,swatches,move)
+            isProper, isWin = new_state.make_move(level, swatches, move)
             if isWin:
                 return new_state.moves
             if isProper:
-                moves_done = visited.get(new_state)
-                if not (moves_done and moves_done < len(new_state.moves)):
-                    stack.append(new_state)
+                q.put(HeuristicBoard(new_state, h1manhattan(new_state)))
         
-        visited[state] = len(state.moves)
-        
-        
-def dls(level, swatches, state: Board, depth_limit, visited):
-    if state in visited or depth_limit == 0:
-        return None
+    
+#def  aStar(level, swatches, state: Board, heuristic):      
 
-    visited.add(state)
-    for move in ['U', 'D', 'L', 'R']:
-        new_state = deepcopy(state)
-        isProper, isWin = new_state.make_move(level, swatches, move)
+    
 
-        if isWin:
-            return new_state.moves
-
-        if isProper:
-            result = dls(level, swatches, new_state, depth_limit - 1, visited)
-            if result is not None:
-                return result
-
-    visited.remove(state)
-    return None
-
-
-def idfs(level, swatches, state: Board):
-    depth_limit = 0
-    while True:
-        visited = set()
-        result = dls(level, swatches, state, depth_limit, visited)
-        if result is not None:
-            return result
-        depth_limit += 1
 
 ##########################################################################################################################################################################
 #MENU
@@ -524,8 +607,18 @@ while level_number != len(levels.levels):
                     print('Time: ', time.time() - t)
                     print('Moves: ', len(solution))
                     print('Moves done: ', solution)
+                elif event.key == K_q:
+                    level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+                    runAlgor = True
+                    m = len(gameObj.moves)
+                    t = time.time()
+                    
+                    solution = greedy_M(level, swatches, gameObj)
+                    print('Time: ', time.time() - t)
+                    print('Moves: ', len(solution))    
                 if not isProper:
                     level1, gameObj, level, enumlevel, swatches, vitalSwatchesNum = gameGenerate(level1)
+                
     
     for y, row in reversed(enumlevel):
         for x, tile in reversed(row): 
@@ -601,6 +694,11 @@ while level_number != len(levels.levels):
     idfs_rect = idfs_text.get_rect()
     idfs_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 10)
     screen.blit(idfs_text, idfs_rect)
+    
+    greedy_text = FONT_low.render('Press G to use Greedy Search', True, (255, 255, 255))
+    greedy_rect = greedy_text.get_rect()
+    greedy_rect.bottomright = (screen.get_width() - 10, screen.get_height() - 70)
+    screen.blit(greedy_text, greedy_rect)
     
     text = FONT.render('Level ' + f'{level1:02d}', True, (0, 0, 0))
     rect = text.get_rect()

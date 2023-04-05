@@ -113,6 +113,7 @@ levels = [
                         '          '],
         'start': {'x': 3, 'y': 1},
         'swatches': []},
+
        
        {   'geometry': ['XXX       ',
                         'XGX  XXXX ',
@@ -153,5 +154,23 @@ levels = [
                                           {   'action': 'onoff',
                                               'position': {'x': 1, 'y': 6}}],
                             'position': {'x': 3, 'y': 14},
-                            'type': 's'}]}
-        ]
+                            'type': 's'}]},
+
+        {   'geometry': ['          ',
+                        '    XXXXXX',
+                        '    XXXXXX',
+                        '  XXXXX  X',
+                        'XXX  f   f',
+                        'XXX  f   X',
+                        'Xfffff   X',
+                        ' fffXXX  X',
+                        ' fbfXGX  X',
+                        'XfffXX   f',
+                        'Xfff     X',
+                        ' ffX    XX',
+                        '   XXXXXXX',
+                        '     XXXXX',
+                        '     XXX  '],
+        'start': {'x': 6, 'y': 13},
+        'swatches': []}]
+                
