@@ -8,7 +8,7 @@
 #   h : x switch, can be switched only if the block hits the switch vertically
 #   l, r : if a switch is hit, these fields appear or disappear
 #   k, q : same as l and r, but initially on instead of off
-#   f : can be visited only in split mode, or not standing
+#   f : can be visited only if the blcok is not standing
 # start: x, y start coordinate of the block
 
 levels = [
@@ -29,9 +29,9 @@ levels = [
     #                     'XXXXXXXXXX',
     #                     'XXXXXGXXXX'],
     #     'start': {'x': 0, 'y': 0},
-    #     'swatches': []},
+    #     'buttons': []},
     
-       {   'geometry': [   '          ',
+       {   'geometry': [ '          ',
                         '          ',
                         '     XXX  ',
                         '    XXXX  ',
@@ -47,7 +47,7 @@ levels = [
                         '          ',
                         '          '],
         'start': {'x': 6, 'y': 3},
-        'swatches': []},
+        'buttons': []},
        
        {   'geometry': ['   XXXXX  ',
                         '   XXXXX  ',
@@ -65,7 +65,7 @@ levels = [
                         '    XXXGX ',
                         '    XXXXX '],
         'start': {'x': 4, 'y': 1},
-        'swatches': [   {   'fields': [   {   'action': 'onoff',
+        'buttons': [   {   'fields': [   {   'action': 'onoff',
                                               'position': {'x': 4, 'y': 10}},
                                           {   'action': 'onoff',
                                               'position': {'x': 4, 'y': 11}}],
@@ -94,7 +94,7 @@ levels = [
                         '  XXGX    ',
                         '  XXXX    '],
         'start': {'x': 4, 'y': 1},
-        'swatches': []},
+        'buttons': []},
        
        {   'geometry': ['  XXXXX   ',
                         '  XXXXX   ',
@@ -112,7 +112,7 @@ levels = [
                         'ffff      ',
                         '          '],
         'start': {'x': 3, 'y': 1},
-        'swatches': []},
+        'buttons': []},
 
        
        {   'geometry': ['XXX       ',
@@ -131,7 +131,7 @@ levels = [
                         '  XX   XXX',
                         '  Xs   XXX'],
         'start': {'x': 8, 'y': 13},
-        'swatches': [   {   'fields': [   {   'action': 'onoff',
+        'buttons': [   {   'fields': [   {   'action': 'onoff',
                                               'position': {'x': 8, 'y': 6}},
                                           {   'action': 'onoff',
                                               'position': {'x': 8, 'y': 5}}],
@@ -164,7 +164,7 @@ levels = [
                         'XXX  f   X',
                         'Xfffff   X',
                         ' fffXXX  X',
-                        ' fbfXGX  X',
+                        ' fffXGX  X',
                         'XfffXX   f',
                         'Xfff     X',
                         ' ffX    XX',
@@ -172,5 +172,5 @@ levels = [
                         '     XXXXX',
                         '     XXX  '],
         'start': {'x': 6, 'y': 13},
-        'swatches': []}]
+        'buttons': []}]
                 
