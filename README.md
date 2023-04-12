@@ -4,13 +4,13 @@
 
 This is an implementation of the Space Block - Roll the Block solitaire game, which is a personal version of the Bloxorz game originally released on Miniclip in the year 2007.
 
-Space Block – Roll the Block is a logic and spatial math solitaire puzzle game in which a 3-D rectangular block slides along a board (platform) until it reaches a final destination.
-The game implemented consists of a board built of 1x1 tiles that arrange in a specific shape and size, and of a 3-D rectangular block composed of 2 tiles, sizing all together 1x1x2. 
-The 3-D block needs to roll/slide along the board until it reaches a certain destination - the goal destination, preferably in a few moves as possible. Along the path the block cannot fall off the edges of the platform it is put onto or get stressed (in a position that can make it fall off easily), which implies that the ends of the block must be always within the board bounderies. 
+Space Block – Roll the Block is a logic and spatial math solitaire puzzle game in which a 3D rectangular block slides along a board (platform) until it reaches a final destination.
+The game implemented consists of a board built of 1x1 tiles that arrange in a specific shape and size, and of a 3D rectangular block composed of 2 tiles, sizing all together 1x1x2. 
+The 3D block needs to roll/slide along the board until it reaches a certain destination - the goal destination, preferably in a few moves as possible. Along the path the block cannot fall off the edges of the platform it is put onto or get stressed (in a position that can make it fall off easily), which implies that the ends of the block must be always within the board bounderies. 
 
 The game implemented has 6 levels, each with a distinct board configuration and distinct difficulty levels, containing traps that can make the player to fail the level. Some levels have buttons that trigger bridges. Each button is triggered when the block stands on it vertically. The bridges allow new paths that are needed to reach the goal tile and win the level.
 
-The 3-D block can be in three positions: 
+The 3D block can be in three positions: 
 
 	* standing vertically: in this position the block takes up one tile;
 	* lying horizontally: in this position the block takes up two tiles;
@@ -52,7 +52,7 @@ $ python3 main.py
 
 Press UP and DOWN arrow keys to navigate through the Menu
 Press ENTER Key to start playing:
-* Arrow Keys: to move the 3-D block
+* Arrow Keys: to move the 3D block
 	* When playing look at the board as if in a vertical position.
 	* This means that:
 		* UP key moves the block to the right
