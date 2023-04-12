@@ -37,15 +37,16 @@ pygame 2.3.0
 
 ### Installation
 
+```
 $ pip3 install -r requirements.txt
-
+```
 
 ### How to Run the Game
 
 Run the file:
-
+```
 $ python3 main.py
-
+```
 
 ### How to play
 
